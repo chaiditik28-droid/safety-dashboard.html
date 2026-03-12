@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AAM Safety Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#f0f4f8;font-family:'Sarabun','Noto Sans Thai',sans-serif;color:#1a1a2e;padding:12px 14px;min-width:1200px}
+  .header{display:flex;align-items:center;gap:14px;background:#1a3a6e;border-radius:12px;padding:12px 20px;margin-bottom:14px;box-shadow:0 4px 20px rgba(26,58,110,0.3)}
+  .logo{background:#fff;border-radius:8px;padding:6px 14px;font-weight:900;font-size:22px;color:#1a3a6e;letter-spacing:1px}
+  .header-title{flex:1}
+  .header-title h1{font-size:17px;font-weight:800;color:#fff}
+  .header-title p{font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px}
+  .btn{border:none;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;box-shadow:0 2px 6px rgba(0,0,0,0.2);transition:opacity .15s}
+  .btn:hover{opacity:.85}
+  .main-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr;gap:12px;margin-bottom:12px}
+  .bottom-grid{display:grid;grid-template-columns:260px 1fr;gap:12px}
+  .card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 12px rgba(30,64,128,0.10);border:1px solid #c5d5e8}
+  .sec-header{background:#1e4080;border-radius:7px;padding:7px 14px;margin-bottom:12px;font-size:12px;font-weight:800;text-align:center;color:#fff;letter-spacing:.2px}
+  .stat-row{display:flex;gap:6px;margin-bottom:12px}
+  .stat-badge{border-radius:8px;padding:8px 6px;text-align:center;flex:1;box-shadow:0 2px 8px rgba(0,0,0,0.18)}
+  .stat-badge .slabel{color:rgba(255,255,255,0.9);font-size:9px;font-weight:700;margin-bottom:4px;line-height:1.3}
+  .stat-badge .sval{color:#fff;font-size:32px;font-weight:900;line-height:1}
+  .legend{display:flex;gap:10px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#374151}
+  .legend-dot{width:10px;height:10px;border-radius:2px}
+  .inc-section{margin-top:10px;border-top:2px solid #c5d5e8;padding-top:10px}
+  .inc-title{font-size:12px;font-weight:800;color:#1e4080;margin-bottom:8px}
+  .inc-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .inc-label{color:#1a1a2e;font-size:12px;font-weight:800;width:78px}
+  .inc-val{flex:1;border-radius:6px;padding:5px 12px;font-size:15px;font-weight:900;text-align:center}
+  .mh-green{background:linear-gradient(135deg,#1b5e20,#43a047);border-radius:10px;padding:14px 16px;text-align:center;margin-bottom:8px;box-shadow:0 4px 16px rgba(46,125,50,0.25)}
+  .mh-green .bignum{font-size:40px;font-weight:900;color:#b9f6ca;line-height:1;letter-spacing:-1px}
+  .mh-green .sublabel{font-size:14px;font-weight:800;color:#fff;margin-top:3px}
+  .mh-green .subdate{font-size:10px;color:rgba(255,255,255,0.7);margin-top:2px}
+  .mh-gold{background:#fffde7;border:2px solid #f59e0b;border-radius:8px;padding:7px 12px;text-align:center;margin-bottom:8px}
+  .mh-gold .gtitle{font-size:10px;color:#92400e;font-weight:700}
+  .mh-gold .gnum{font-size:20px;font-weight:900;color:#b45309}
+  .mh-gold .gunit{font-size:10px;color:#92400e;font-weight:600}
+  .mh-target{font-size:10px;color:#9ca3af;font-weight:700;text-align:center;margin-bottom:4px}
+  .mh-blue{background:linear-gradient(135deg,#1565c0,#1976d2);border-radius:10px;padding:18px 12px;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(21,101,192,0.25)}
+  .mh-blue .bignum{font-size:48px;font-weight:900;color:#e3f2fd;line-height:1;letter-spacing:-2px}
+  .mh-blue .sublabel{font-size:16px;font-weight:800;color:#fff;margin-top:4px}
+  .mh-blue .subdate{font-size:11px;color:rgba(255,255,255,0.7);margin-top:3px}
+  .bottom-left{display:flex;flex-direction:column;gap:8px}
+  .month-table-wrap{overflow-x:auto}
+  .month-table{width:100%;border-collapse:collapse;font-size:12px}
+  .month-table th{padding:8px 5px;text-align:center;color:#fff;font-weight:700;font-size:11px}
+  .month-table th:first-child{text-align:left;padding:8px 10px;font-size:12px;font-weight:800}
+  .month-table th:last-child{color:#ffd700;font-weight:900;font-size:13px}
+  .month-table td{padding:7px 5px;text-align:center;font-size:13px}
+  .month-table td:first-child{padding:7px 10px;font-weight:900;font-size:12px;border-right:2px solid #c5d5e8}
+  .month-table td:last-child{border-left:2px solid #c5d5e8;font-weight:900;font-size:14px}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
+  .modal-overlay.active{display:flex}
+  .modal-box{background:#fff;border:2px solid #1e4080;border-radius:14px;padding:28px;min-width:420px;max-width:700px;width:90%;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.25)}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .modal-head h3{color:#1a3a6e;font-size:18px;font-weight:800}
+  .modal-close{background:#d32f2f;border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700}
+  .field{margin-bottom:12px}
+  .field label{color:#1e4080;font-size:13px;font-weight:700;display:block;margin-bottom:4px}
+  .field input{width:100%;background:#f8fafc;border:1.5px solid #93afd4;border-radius:7px;padding:8px 12px;color:#1a1a2e;font-size:14px;font-weight:600;font-family:inherit}
+  .field input:focus{outline:2px solid #1e4080}
+  .dept-card{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:12px;border:1.5px solid #c5d5e8}
+  .dept-card .dept-head{display:flex;align-items:flex-end;gap:8px;margin-bottom:4px}
+  .dept-card .dept-head .field{flex:1;margin-bottom:0}
+  .dept-card .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .add-dept{background:#f0f7ff;border-radius:10px;padding:14px;border:2px dashed #1565c0;margin-bottom:12px}
+  .add-dept h4{color:#1e4080;font-size:13px;font-weight:800;margin-bottom:10px}
+  .inc-edit{background:#fff8f0;border-radius:10px;padding:14px;border:1.5px solid #c5d5e8}
+  .inc-edit h4{color:#1e4080;font-size:13px;font-weight:800;margin-bottom:10px}
+  .month-edit-item{border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid #c5d5e8}
+  .month-edit-item h4{color:#1e4080;font-weight:800;margin-bottom:6px;font-size:13px}
+  .month-edit-item .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .mh-row{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:4px}
+  .chart-wrap{position:relative}
+  .chart-sub-title{font-size:11px;font-weight:800;color:#1e4080;margin-bottom:6px;margin-top:8px;padding-top:8px;border-top:2px solid #c5d5e8}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">AAM</div>
+  <div class="header-title">
+    <h1>สถิติอุบัติเหตุด้านความปลอดภัย อาชีวอนามัยและสภาพแวดล้อมในการทำงาน ปี <span id="hdr-year"></span></h1>
+    <p>อัปเดตแบบเรียลไทม์ | ข้อมูล : มกราคม <span id="hdr-year2"></span></p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" style="background:#2563eb" onclick="openModal('settings')">⚙ ตั้งค่า</button>
+    <button class="btn" style="background:#d32f2f" onclick="openModal('accidents')">✏ แก้ไขอุบัติเหตุ</button>
+    <button class="btn" style="background:#2e7d32" onclick="openModal('manhour')">⏱ ชั่วโมงทำงาน</button>
+    <button class="btn" style="background:#b8860b" onclick="openModal('monthly')">📅 รายเดือน</button>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+
+  <!-- Card 1: อุบัติเหตุสะสม -->
+  <div class="card">
+    <div class="sec-header">จำนวนอุบัติเหตุสะสม ปี <span class="yr"></span></div>
+    <div class="stat-row">
+      <div class="stat-badge" style="background:#d32f2f">
+        <div class="slabel">บาดเจ็บขั้นหยุดงาน</div>
+        <div class="sval" id="sb-lost"></div>
+      </div>
+      <div class="stat-badge" style="background:#d4a800">
+        <div class="slabel">บาดเจ็บไม่หยุดงาน</div>
+        <div class="sval" id="sb-nonlost"></div>
+      </div>
+      <div class="stat-badge" style="background:#1565c0">
+        <div class="slabel">ทรัพย์สินเสียหาย</div>
+        <div class="sval" id="sb-prop"></div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#bbdefb,#e3f2fd);border:2px solid #90caf9;border-radius:9px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;box-shadow:0 3px 10px rgba(33,150,243,0.15);flex-shrink:0">
+      <div style="color:#0d47a1;font-size:13px;font-weight:800;line-height:1.5">รวมอุบัติเหตุ<br>ทั้งหมด ปี <span class="yr"></span></div>
+      <div style="text-align:center">
+        <div style="color:#0d47a1;font-size:48px;font-weight:900;line-height:1;letter-spacing:-1px" id="sb-total"></div>
+        <div style="color:#1565c0;font-size:11px;font-weight:800">ครั้ง</div>
+      </div>
+      <div style="text-align:right;font-size:11px;font-weight:800;color:#1565c0;line-height:2.1">
+        <div>🔴 หยุดงาน <span id="sb-total-lost" style="color:#d32f2f;font-weight:900;font-size:13px"></span></div>
+        <div>🟡 ไม่หยุดงาน <span id="sb-total-nonlost" style="color:#b8860b;font-weight:900;font-size:13px"></span></div>
+        <div>🔵 ทรัพย์สิน <span id="sb-total-prop" style="color:#1565c0;font-weight:900;font-size:13px"></span></div>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
+    <div class="legend" style="margin-top:5px">
+      <div class="legend-item"><div class="legend-dot" style="background:#d32f2f"></div>หยุดงาน</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d4a800"></div>ไม่หยุดงาน</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>ทรัพย์สิน</div>
+    </div>
+  </div>
+
+  <!-- Card 2: แยกแผนก -->
+  <div class="card">
+    <div class="sec-header">อุบัติเหตุแยกแผนก ปี <span class="yr"></span></div>
+    <div class="chart-wrap"><canvas id="chart-dept"></canvas></div>
+    <div class="inc-section">
+      <div class="inc-title">รายงานอุบัติการณ์ ปี <span class="yr"></span></div>
+      <div class="inc-row">
+        <div class="inc-label">Near Miss</div>
+        <div class="inc-val" id="inc-nearmiss" style="color:#7c3100;background:#ffe0b2"></div>
+      </div>
+      <div class="inc-row">
+        <div class="inc-label">Unsafe Con</div>
+        <div class="inc-val" id="inc-unsafecon" style="color:#5a4500;background:#fff9c4"></div>
+      </div>
+      <div class="inc-row">
+        <div class="inc-label">Unsafe Act</div>
+        <div class="inc-val" id="inc-unsafeact" style="color:#4a1060;background:#e1bee7"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: เปรียบเทียบ -->
+  <div class="card">
+    <div class="sec-header">เปรียบเทียบอุบัติเหตุ ปี 2566-2569</div>
+    <div class="chart-wrap"><canvas id="chart-yearly"></canvas></div>
+    <div class="chart-sub-title">เปรียบเทียบรายเดือน (หยุดงาน)</div>
+    <div class="chart-wrap" style="flex:0 0 90px"><canvas id="chart-monthly-compare"></canvas></div>
+    <div class="legend" style="margin-top:4px">
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>2566</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>2567</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>2568</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d32f2f"></div>2569</div>
+    </div>
+  </div>
+
+  <!-- Card 4: Manhour -->
+  <div class="card">
+    <div class="sec-header">จำนวนชั่วโมงการทำงานสะสมที่ไม่เกิดอุบัติเหตุถึงขั้นหยุดงาน</div>
+    <div class="mh-green">
+      <div class="bignum" id="mh-total-top"></div>
+      <div class="sublabel">ชั่วโมงทำงาน (MANHOUR)</div>
+      <div class="subdate">ข้อมูล : มกราคม <span class="yr"></span></div>
+    </div>
+    <div class="mh-gold">
+      <div class="gtitle">ทำได้สูงสุด</div>
+      <div class="gnum" id="mh-max"></div>
+      <div class="gunit">ชั่วโมงทำงาน (MANHOUR)</div>
+    </div>
+    <div class="mh-target">เป้าหมาย <span id="mh-target-label"></span> ชั่วโมง</div>
+    <div class="chart-wrap"><canvas id="chart-line"></canvas></div>
+  </div>
+</div>
+
+<!-- BOTTOM GRID -->
+<div class="bottom-grid">
+  <div class="card bottom-left">
+    <div class="sec-header">จำนวนชั่วโมงการทำงานสะสม ปี <span class="yr"></span></div>
+    <div class="mh-blue">
+      <div class="bignum" id="mh-total-bot"></div>
+      <div class="sublabel">ชั่วโมงทำงาน (MANHOUR)</div>
+      <div class="subdate">ข้อมูล : มกราคม <span class="yr"></span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-shrink:0">
+      <div class="sec-header" style="margin-bottom:0">ข้อมูลรายเดือน ปี <span class="yr"></span></div>
+      <button class="btn" style="background:#b8860b" onclick="openModal('monthly')">✏ แก้ไขรายเดือน</button>
+    </div>
+    <div class="month-table-wrap">
+      <table class="month-table" id="monthly-table">
+        <thead>
+          <tr style="background:#1e4080">
+            <th>ประเภท</th>
+            <th>ม.ค.</th><th>ก.พ.</th><th>มี.ค.</th><th>เม.ย.</th>
+            <th>พ.ค.</th><th>มิ.ย.</th><th>ก.ค.</th><th>ส.ค.</th>
+            <th>ก.ย.</th><th>ต.ค.</th><th>พ.ย.</th><th>ธ.ค.</th>
+            <th>รวม</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+<!-- Settings -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>⚙ ตั้งค่าทั่วไป</h3>
+      <button class="modal-close" onclick="closeModal('settings')">✕</button>
+    </div>
+    <div class="field"><label>ปี (พ.ศ.)</label><input type="number" id="s-year"></div>
+    <div class="field"><label>เป้าหมายชั่วโมง (MANHOUR)</label><input type="number" id="s-target"></div>
+    <div class="field"><label>ชั่วโมงสะสมปัจจุบัน</label><input type="number" id="s-total"></div>
+    <div class="field"><label>สถิติสูงสุด (MANHOUR)</label><input type="number" id="s-max"></div>
+    <button class="btn" style="background:#1565c0;width:100%;padding:10px;font-size:14px;margin-bottom:8px" onclick="saveSettings()">💾 บันทึก</button>
+    <button class="btn" style="background:#d32f2f;width:100%;padding:10px;font-size:14px" onclick="resetData()">🗑 รีเซ็ตข้อมูลทั้งหมด</button>
+  </div>
+</div>
+
+<!-- Accidents -->
+<div class="modal-overlay" id="modal-accidents">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>✏ แก้ไขอุบัติเหตุแยกแผนก</h3>
+      <button class="modal-close" onclick="closeModal('accidents')">✕</button>
+    </div>
+    <div id="dept-list"></div>
+    <div class="add-dept">
+      <h4>+ เพิ่มแผนกใหม่</h4>
+      <div class="field"><label>ชื่อแผนก</label><input type="text" id="new-dept-name"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="field"><label>หยุดงาน</label><input type="number" id="new-dept-lost" value="0" min="0"></div>
+        <div class="field"><label>ไม่หยุดงาน</label><input type="number" id="new-dept-nonlost" value="0" min="0"></div>
+        <div class="field"><label>ทรัพย์สิน</label><input type="number" id="new-dept-prop" value="0" min="0"></div>
+      </div>
+      <button class="btn" style="background:#2e7d32;width:100%;padding:9px;font-size:13px;margin-top:4px" onclick="addDept()">+ เพิ่มแผนก</button>
+    </div>
+    <div class="inc-edit">
+      <h4>รายงานอุบัติการณ์</h4>
+      <div class="field"><label>Near Miss</label><input type="number" id="e-nearmiss" min="0"></div>
+      <div class="field"><label>Unsafe Condition</label><input type="number" id="e-unsafecon" min="0"></div>
+      <div class="field"><label>Unsafe Act</label><input type="number" id="e-unsafeact" min="0"></div>
+      <button class="btn" style="background:#1565c0;width:100%;padding:10px;font-size:14px" onclick="saveIncidents()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manhour -->
+<div class="modal-overlay" id="modal-manhour">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>⏱ แก้ไขชั่วโมงทำงาน</h3>
+      <button class="modal-close" onclick="closeModal('manhour')">✕</button>
+    </div>
+    <div class="field"><label>ชั่วโมงทำงานสะสมปัจจุบัน</label><input type="number" id="mh-edit-total"></div>
+    <div class="field"><label>เป้าหมายชั่วโมง</label><input type="number" id="mh-edit-target"></div>
+    <div class="field"><label>สถิติสูงสุดที่เคยทำได้</label><input type="number" id="mh-edit-max"></div>
+    <div style="color:#1e4080;font-size:13px;font-weight:800;margin:12px 0 8px;border-top:2px solid #c5d5e8;padding-top:12px">ประวัติชั่วโมงรายเดือน</div>
+    <div id="mh-history-fields"></div>
+    <button class="btn" style="background:#1565c0;width:100%;padding:10px;font-size:14px;margin-top:8px" onclick="saveManhour()">💾 บันทึก</button>
+  </div>
+</div>
+
+<!-- Monthly -->
+<div class="modal-overlay" id="modal-monthly">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-monthly-title">✏ แก้ไขข้อมูลรายเดือน</h3>
+      <button class="modal-close" onclick="closeModal('monthly')">✕</button>
+    </div>
+    <div id="monthly-edit-fields"></div>
+    <button class="btn" style="background:#1565c0;width:100%;padding:10px;font-size:14px;margin-top:8px" onclick="saveMonthly()">💾 บันทึก</button>
+  </div>
+</div>
+
+<script>
+const MONTHS_TH = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+const DEFAULT_DATA = {
+  year: 2569,
+  targetManhour: 1000000,
+  totalManhour: 108744,
+  maxManhourRecord: 1570830,
+  departments: [
+    {name:"Calotte 2",lostTime:1,nonLostTime:0,propertyDamage:0},
+    {name:"Fab B",lostTime:1,nonLostTime:0,propertyDamage:0}
+  ],
+  nearMiss:2, unsafeCon:0, unsafeAct:1,
+  monthlyData: Array.from({length:12},(_,i)=>({
+    lostTime2566:i===0?2:0, nonLostTime2566:i===0?4:0, property2566:i===0?2:0,
+    lostTime2567:0,nonLostTime2567:0,property2567:0,
+    lostTime2568:0,nonLostTime2568:0,property2568:0,
+    lostTime2569:0,nonLostTime2569:0,property2569:0
+  })),
+  yearlyComparison:[
+    {year:"2566",lostTime:2,nonLostTime:4,property:2},
+    {year:"2567",lostTime:3,nonLostTime:4,property:5},
+    {year:"2568",lostTime:2,nonLostTime:6,property:4},
+    {year:"2569",lostTime:2,nonLostTime:0,property:0}
+  ],
+  manhourHistory:[
+    {label:"ม.ค.68",value:9996},{label:"ก.พ.68",value:86180},
+    {label:"มี.ค.68",value:211},{label:"เม.ย.68",value:115272},
+    {label:"พ.ค.68",value:233779},{label:"มิ.ย.68",value:354385},
+    {label:"ก.ค.68",value:455081},{label:"ส.ค.68",value:563835},
+    {label:"ก.ย.68",value:1423026},{label:"ต.ค.68",value:1542103},
+    {label:"พ.ย.68",value:1570830},{label:"ธ.ค.68",value:563835}
+  ]
+};
+
+let D = JSON.parse(JSON.stringify(DEFAULT_DATA));
+const STORE_KEY = "aam-safety-html-v1";
+
+function loadData(){
+  try{ const s=localStorage.getItem(STORE_KEY); if(s) D=JSON.parse(s); } catch{}
+}
+function saveData(){
+  try{ localStorage.setItem(STORE_KEY,JSON.stringify(D)); } catch{}
+}
+
+// ===== CHARTS =====
+let charts = {};
+
+function initCharts(){
+  const defOpts = {
+    responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#fff',titleColor:'#1e4080',bodyColor:'#1a1a2e',
+      borderColor:'#1e4080',borderWidth:1.5,titleFont:{weight:'800',size:12},
+      bodyFont:{weight:'700',size:12},padding:8,
+      callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`}
+    }},
+    scales:{
+      x:{ticks:{color:'#374151',font:{weight:'700',size:9}},grid:{color:'#e8eef6'}},
+      y:{ticks:{color:'#374151',font:{weight:'600',size:9}},grid:{color:'#e8eef6'},beginAtZero:true}
+    }
+  };
+
+  // Chart 1: Monthly 2569
+  charts.monthly = new Chart(document.getElementById('chart-monthly'),{
+    type:'bar',
+    data:{labels:MONTHS_TH,datasets:[
+      {label:'หยุดงาน',data:D.monthlyData.map(m=>m.lostTime2569),backgroundColor:'#d32f2f',stack:'a'},
+      {label:'ไม่หยุดงาน',data:D.monthlyData.map(m=>m.nonLostTime2569),backgroundColor:'#d4a800',stack:'a'},
+      {label:'ทรัพย์สิน',data:D.monthlyData.map(m=>m.property2569),backgroundColor:'#1565c0',stack:'a'}
+    ]},
+    options:{...JSON.parse(JSON.stringify(defOpts)),plugins:{...JSON.parse(JSON.stringify(defOpts.plugins))}
+  }});
+
+  // Chart 2: Dept
+  charts.dept = new Chart(document.getElementById('chart-dept'),{
+    type:'bar',
+    data:{labels:D.departments.map(d=>d.name),datasets:[
+      {label:'หยุดงาน',data:D.departments.map(d=>d.lostTime),backgroundColor:'#d32f2f',borderRadius:4},
+      {label:'ไม่หยุดงาน',data:D.departments.map(d=>d.nonLostTime),backgroundColor:'#d4a800',borderRadius:4},
+      {label:'ทรัพย์สิน',data:D.departments.map(d=>d.propertyDamage),backgroundColor:'#1565c0',borderRadius:4}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      layout:{padding:{top:24}},
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{color:'#374151',font:{weight:'700',size:10},boxWidth:12,boxHeight:12,padding:8}},
+        tooltip:{...JSON.parse(JSON.stringify(defOpts.plugins.tooltip))},
+        datalabels:{
+          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+          color: ctx => ctx.datasetIndex===1 ? '#3a2800' : '#fff',
+          font:{weight:'900',size:18},
+          anchor:'center',
+          align:'center',
+          formatter: v => v > 0 ? v : ''
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#1a1a2e',font:{weight:'800',size:12}},grid:{color:'#e8eef6'}},
+        y:{ticks:{color:'#374151',font:{weight:'700',size:11}},grid:{color:'#e8eef6'},beginAtZero:true}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // Chart 3: Yearly comparison
+  charts.yearly = new Chart(document.getElementById('chart-yearly'),{
+    type:'bar',
+    data:{labels:D.yearlyComparison.map(y=>y.year),datasets:[
+      {label:'หยุดงาน',   data:D.yearlyComparison.map(y=>y.lostTime),     backgroundColor:'#d32f2f',stack:'a'},
+      {label:'ไม่หยุดงาน',data:D.yearlyComparison.map(y=>y.nonLostTime),  backgroundColor:'#d4a800',stack:'a'},
+      {label:'ทรัพย์สิน', data:D.yearlyComparison.map(y=>y.property),     backgroundColor:'#1565c0',stack:'a'}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      layout:{padding:{top:32}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{...JSON.parse(JSON.stringify(defOpts.plugins.tooltip))},
+        datalabels:{
+          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+          font: ctx => ({weight:'900', size: ctx.datasetIndex===2 ? 15 : 13}),
+          color: ctx => {
+            if(ctx.datasetIndex===2) return '#1a1a2e';
+            if(ctx.datasetIndex===1) return '#3a2800';
+            return '#fff';
+          },
+          anchor: ctx => ctx.datasetIndex===2 ? 'end' : 'center',
+          align:  ctx => ctx.datasetIndex===2 ? 'end' : 'center',
+          offset: 0,
+          formatter:(v, ctx) => {
+            if(ctx.datasetIndex===2){
+              const i = ctx.dataIndex;
+              const total = D.yearlyComparison[i].lostTime + D.yearlyComparison[i].nonLostTime + D.yearlyComparison[i].property;
+              return total > 0 ? total : '';
+            }
+            return v > 0 ? v : '';
+          }
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#1a1a2e',font:{weight:'800',size:13}},grid:{color:'#e8eef6'}},
+        y:{ticks:{color:'#374151',font:{weight:'700',size:11}},grid:{color:'#e8eef6'},beginAtZero:true}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // Chart 4: Monthly compare
+  charts.monthlyCompare = new Chart(document.getElementById('chart-monthly-compare'),{
+    type:'bar',
+    data:{labels:MONTHS_TH,datasets:[
+      {label:'2566',data:D.monthlyData.map(m=>m.lostTime2566),backgroundColor:'#3b82f6',borderRadius:2},
+      {label:'2567',data:D.monthlyData.map(m=>m.lostTime2567),backgroundColor:'#10b981',borderRadius:2},
+      {label:'2568',data:D.monthlyData.map(m=>m.lostTime2568),backgroundColor:'#8b5cf6',borderRadius:2},
+      {label:'2569',data:D.monthlyData.map(m=>m.lostTime2569),backgroundColor:'#d32f2f',borderRadius:2}
+    ]},
+    options:{...JSON.parse(JSON.stringify(defOpts)),
+      scales:{
+        x:{ticks:{color:'#1a1a2e',font:{weight:'700',size:10}},grid:{color:'#e8eef6'}},
+        y:{ticks:{color:'#374151',font:{weight:'600',size:10}},grid:{color:'#e8eef6'},beginAtZero:true}
+      }
+    }
+  });
+
+  // Chart 5: Line manhour
+  charts.line = new Chart(document.getElementById('chart-line'),{
+    type:'line',
+    data:{labels:D.manhourHistory.map(h=>h.label),datasets:[
+      {label:'ชั่วโมง',data:D.manhourHistory.map(h=>h.value),borderColor:'#d4a800',backgroundColor:'rgba(212,168,0,0.10)',borderWidth:2.5,tension:0.3,pointRadius:4,pointBackgroundColor:'#d4a800',fill:true}
+    ]},
+    options:{...JSON.parse(JSON.stringify(defOpts)),
+      scales:{
+        x:{ticks:{color:'#374151',font:{weight:'700',size:9}},grid:{color:'#e8eef6'}},
+        y:{ticks:{color:'#374151',font:{weight:'600',size:9},callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#e8eef6'},beginAtZero:true}
+      },
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#fff',titleColor:'#1e4080',bodyColor:'#1a1a2e',borderColor:'#1e4080',borderWidth:1.5,
+        callbacks:{label:ctx=>`ชั่วโมง: ${ctx.parsed.y.toLocaleString()}`}
+      }}
+    }
+  });
+}
+
+function updateCharts(){
+  const ly = D.yearlyComparison[D.yearlyComparison.length-1];
+  // stats
+  document.getElementById('sb-lost').textContent = ly.lostTime;
+  document.getElementById('sb-nonlost').textContent = ly.nonLostTime;
+  document.getElementById('sb-prop').textContent = ly.property;
+  const totalAcc = (ly.lostTime||0)+(ly.nonLostTime||0)+(ly.property||0);
+  document.getElementById('sb-total').textContent = totalAcc;
+  document.getElementById('sb-total-lost').textContent = ly.lostTime;
+  document.getElementById('sb-total-nonlost').textContent = ly.nonLostTime;
+  document.getElementById('sb-total-prop').textContent = ly.property;
+  // incidents
+  const setInc=(id,val,color)=>{
+    const el=document.getElementById(id);
+    el.textContent=val;
+    el.style.background=color.bg;
+    el.style.color=val>0?color.text:'#9ca3af';
+  };
+  setInc('inc-nearmiss',D.nearMiss,{bg:'#ffe0b2',text:'#7c3100'});
+  setInc('inc-unsafecon',D.unsafeCon,{bg:'#fff9c4',text:'#5a4500'});
+  setInc('inc-unsafeact',D.unsafeAct,{bg:'#e1bee7',text:'#4a1060'});
+  // manhour
+  document.getElementById('mh-total-top').textContent = D.totalManhour.toLocaleString();
+  document.getElementById('mh-total-bot').textContent = D.totalManhour.toLocaleString();
+  document.getElementById('mh-max').textContent = D.maxManhourRecord.toLocaleString();
+  document.getElementById('mh-target-label').textContent = D.targetManhour.toLocaleString();
+  // year labels
+  document.querySelectorAll('.yr').forEach(el=>el.textContent=D.year);
+  document.querySelectorAll('#hdr-year,#hdr-year2').forEach(el=>el.textContent=D.year);
+
+  // chart monthly
+  charts.monthly.data.datasets[0].data = D.monthlyData.map(m=>m.lostTime2569);
+  charts.monthly.data.datasets[1].data = D.monthlyData.map(m=>m.nonLostTime2569);
+  charts.monthly.data.datasets[2].data = D.monthlyData.map(m=>m.property2569);
+  charts.monthly.update();
+  // chart dept
+  charts.dept.data.labels = D.departments.map(d=>d.name);
+  charts.dept.data.datasets[0].data = D.departments.map(d=>d.lostTime);
+  charts.dept.data.datasets[1].data = D.departments.map(d=>d.nonLostTime);
+  charts.dept.data.datasets[2].data = D.departments.map(d=>d.propertyDamage);
+  charts.dept.update();
+  // chart yearly
+  charts.yearly.data.labels = D.yearlyComparison.map(y=>y.year);
+  charts.yearly.data.datasets[0].data = D.yearlyComparison.map(y=>y.lostTime);
+  charts.yearly.data.datasets[1].data = D.yearlyComparison.map(y=>y.nonLostTime);
+  charts.yearly.data.datasets[2].data = D.yearlyComparison.map(y=>y.property);
+  charts.yearly.update();
+  // chart monthly compare
+  charts.monthlyCompare.data.datasets[0].data = D.monthlyData.map(m=>m.lostTime2566);
+  charts.monthlyCompare.data.datasets[1].data = D.monthlyData.map(m=>m.lostTime2567);
+  charts.monthlyCompare.data.datasets[2].data = D.monthlyData.map(m=>m.lostTime2568);
+  charts.monthlyCompare.data.datasets[3].data = D.monthlyData.map(m=>m.lostTime2569);
+  charts.monthlyCompare.update();
+  // chart line
+  charts.line.data.labels = D.manhourHistory.map(h=>h.label);
+  charts.line.data.datasets[0].data = D.manhourHistory.map(h=>h.value);
+  charts.line.update();
+  // monthly table
+  renderMonthlyTable();
+}
+
+function renderMonthlyTable(){
+  const rows=[
+    {key:'lostTime2569',label:'หยุดงาน',color:'#d32f2f',bg:'#fde8e8'},
+    {key:'nonLostTime2569',label:'ไม่หยุดงาน',color:'#d4a800',bg:'#fffde7'},
+    {key:'property2569',label:'ทรัพย์สิน',color:'#1565c0',bg:'#e3f0fd'}
+  ];
+  const tbody=document.getElementById('monthly-tbody');
+  tbody.innerHTML='';
+  rows.forEach((row,ri)=>{
+    const total=D.monthlyData.reduce((s,m)=>s+(m[row.key]||0),0);
+    let tr=`<tr style="background:${ri%2===0?'#fff':'#eef3fa'}">`;
+    tr+=`<td style="color:${row.color};font-weight:900;font-size:12px;border-right:2px solid #c5d5e8;padding:7px 10px">${row.label}</td>`;
+    D.monthlyData.forEach(m=>{
+      const v=m[row.key]||0;
+      tr+=`<td style="color:${v>0?row.color:'#cbd5e1'};font-weight:${v>0?900:500};background:${v>0?row.bg:'transparent'};padding:7px 5px">${v}</td>`;
+    });
+    tr+=`<td style="color:${total>0?row.color:'#9ca3af'};font-weight:900;font-size:14px;background:${total>0?row.bg:'transparent'};border-left:2px solid #c5d5e8;padding:7px 10px">${total}</td>`;
+    tr+='</tr>';
+    tbody.innerHTML+=tr;
+  });
+}
+
+// ===== MODALS =====
+function openModal(name){
+  if(name==='settings'){
+    document.getElementById('s-year').value=D.year;
+    document.getElementById('s-target').value=D.targetManhour;
+    document.getElementById('s-total').value=D.totalManhour;
+    document.getElementById('s-max').value=D.maxManhourRecord;
+  }
+  if(name==='accidents'){
+    renderDeptList();
+    document.getElementById('e-nearmiss').value=D.nearMiss;
+    document.getElementById('e-unsafecon').value=D.unsafeCon;
+    document.getElementById('e-unsafeact').value=D.unsafeAct;
+    document.getElementById('new-dept-name').value='';
+    document.getElementById('new-dept-lost').value=0;
+    document.getElementById('new-dept-nonlost').value=0;
+    document.getElementById('new-dept-prop').value=0;
+  }
+  if(name==='manhour'){
+    document.getElementById('mh-edit-total').value=D.totalManhour;
+    document.getElementById('mh-edit-target').value=D.targetManhour;
+    document.getElementById('mh-edit-max').value=D.maxManhourRecord;
+    const hf=document.getElementById('mh-history-fields');
+    hf.innerHTML='';
+    D.manhourHistory.forEach((h,i)=>{
+      hf.innerHTML+=`<div class="mh-row">
+        <div class="field">${i===0?'<label>เดือน</label>':''}<input type="text" id="mhh-label-${i}" value="${h.label}"></div>
+        <div class="field">${i===0?'<label>จำนวนชั่วโมง</label>':''}<input type="number" id="mhh-val-${i}" value="${h.value}"></div>
+      </div>`;
+    });
+  }
+  if(name==='monthly'){
+    document.getElementById('modal-monthly-title').textContent=`✏ แก้ไขข้อมูลรายเดือน ปี ${D.year}`;
+    const mef=document.getElementById('monthly-edit-fields');
+    mef.innerHTML='';
+    D.monthlyData.forEach((m,i)=>{
+      mef.innerHTML+=`<div class="month-edit-item" style="background:${i%2===0?'#f8fafc':'#f0f7ff'}">
+        <h4>${MONTHS_TH[i]}</h4>
+        <div class="three-col">
+          <div class="field"><label>หยุดงาน</label><input type="number" id="me-lost-${i}" value="${m.lostTime2569}" min="0"></div>
+          <div class="field"><label>ไม่หยุดงาน</label><input type="number" id="me-nonlost-${i}" value="${m.nonLostTime2569}" min="0"></div>
+          <div class="field"><label>ทรัพย์สิน</label><input type="number" id="me-prop-${i}" value="${m.property2569}" min="0"></div>
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById('modal-'+name).classList.add('active');
+}
+function closeModal(name){
+  document.getElementById('modal-'+name).classList.remove('active');
+}
+
+function renderDeptList(){
+  const dl=document.getElementById('dept-list');
+  dl.innerHTML='';
+  D.departments.forEach((dept,i)=>{
+    dl.innerHTML+=`<div class="dept-card" id="dept-card-${i}">
+      <div class="dept-head">
+        <div class="field" style="flex:1;margin-bottom:0"><label>ชื่อแผนก</label><input type="text" id="d-name-${i}" value="${dept.name}"></div>
+        <button class="btn" style="background:#d32f2f;padding:8px 12px;margin-bottom:0;height:36px" onclick="deleteDept(${i})">ลบ</button>
+      </div>
+      <div class="dept-card" style="background:transparent;border:none;padding:0;margin-top:8px">
+        <div class="three-col">
+          <div class="field"><label>บาดเจ็บขั้นหยุดงาน</label><input type="number" id="d-lost-${i}" value="${dept.lostTime}" min="0" onchange="saveDeptInline(${i})"></div>
+          <div class="field"><label>บาดเจ็บไม่หยุดงาน</label><input type="number" id="d-nonlost-${i}" value="${dept.nonLostTime}" min="0" onchange="saveDeptInline(${i})"></div>
+          <div class="field"><label>ทรัพย์สินเสียหาย</label><input type="number" id="d-prop-${i}" value="${dept.propertyDamage}" min="0" onchange="saveDeptInline(${i})"></div>
+        </div>
+      </div>
+      <button class="btn" style="background:#1565c0;width:100%;padding:8px;font-size:12px;margin-top:4px" onclick="saveDeptInline(${i})">💾 บันทึกแผนกนี้</button>
+    </div>`;
+  });
+}
+
+function saveDeptInline(i){
+  D.departments[i].name = document.getElementById(`d-name-${i}`).value;
+  D.departments[i].lostTime = parseInt(document.getElementById(`d-lost-${i}`).value)||0;
+  D.departments[i].nonLostTime = parseInt(document.getElementById(`d-nonlost-${i}`).value)||0;
+  D.departments[i].propertyDamage = parseInt(document.getElementById(`d-prop-${i}`).value)||0;
+  // update yearly last entry
+  const sumLost = D.departments.reduce((s,d)=>s+d.lostTime,0);
+  const sumNL = D.departments.reduce((s,d)=>s+d.nonLostTime,0);
+  const sumProp = D.departments.reduce((s,d)=>s+d.propertyDamage,0);
+  D.yearlyComparison[D.yearlyComparison.length-1].lostTime = sumLost;
+  D.yearlyComparison[D.yearlyComparison.length-1].nonLostTime = sumNL;
+  D.yearlyComparison[D.yearlyComparison.length-1].property = sumProp;
+  saveData(); updateCharts();
+}
+
+function deleteDept(i){
+  if(!confirm(`ลบแผนก "${D.departments[i].name}" ?`)) return;
+  D.departments.splice(i,1);
+  saveData(); updateCharts(); renderDeptList();
+}
+
+function addDept(){
+  const name=document.getElementById('new-dept-name').value.trim();
+  if(!name){alert('กรุณาใส่ชื่อแผนก');return;}
+  D.departments.push({
+    name,
+    lostTime: parseInt(document.getElementById('new-dept-lost').value)||0,
+    nonLostTime: parseInt(document.getElementById('new-dept-nonlost').value)||0,
+    propertyDamage: parseInt(document.getElementById('new-dept-prop').value)||0
+  });
+  saveDeptInline(D.departments.length-1);
+  document.getElementById('new-dept-name').value='';
+  document.getElementById('new-dept-lost').value=0;
+  document.getElementById('new-dept-nonlost').value=0;
+  document.getElementById('new-dept-prop').value=0;
+  renderDeptList();
+}
+
+function saveIncidents(){
+  D.nearMiss=parseInt(document.getElementById('e-nearmiss').value)||0;
+  D.unsafeCon=parseInt(document.getElementById('e-unsafecon').value)||0;
+  D.unsafeAct=parseInt(document.getElementById('e-unsafeact').value)||0;
+  saveData(); updateCharts(); closeModal('accidents');
+}
+
+function saveSettings(){
+  D.year=parseInt(document.getElementById('s-year').value)||D.year;
+  D.targetManhour=parseInt(document.getElementById('s-target').value)||D.targetManhour;
+  D.totalManhour=parseInt(document.getElementById('s-total').value)||D.totalManhour;
+  D.maxManhourRecord=parseInt(document.getElementById('s-max').value)||D.maxManhourRecord;
+  saveData(); updateCharts(); closeModal('settings');
+}
+
+function saveManhour(){
+  D.totalManhour=parseInt(document.getElementById('mh-edit-total').value)||D.totalManhour;
+  D.targetManhour=parseInt(document.getElementById('mh-edit-target').value)||D.targetManhour;
+  D.maxManhourRecord=parseInt(document.getElementById('mh-edit-max').value)||D.maxManhourRecord;
+  D.manhourHistory.forEach((_,i)=>{
+    D.manhourHistory[i].label=document.getElementById(`mhh-label-${i}`).value;
+    D.manhourHistory[i].value=parseInt(document.getElementById(`mhh-val-${i}`).value)||0;
+  });
+  saveData(); updateCharts(); closeModal('manhour');
+}
+
+function saveMonthly(){
+  D.monthlyData.forEach((_,i)=>{
+    D.monthlyData[i].lostTime2569=parseInt(document.getElementById(`me-lost-${i}`).value)||0;
+    D.monthlyData[i].nonLostTime2569=parseInt(document.getElementById(`me-nonlost-${i}`).value)||0;
+    D.monthlyData[i].property2569=parseInt(document.getElementById(`me-prop-${i}`).value)||0;
+  });
+  saveData(); updateCharts(); closeModal('monthly');
+}
+
+function resetData(){
+  if(!confirm('ล้างข้อมูลทั้งหมดและคืนค่าเริ่มต้น?')) return;
+  D=JSON.parse(JSON.stringify(DEFAULT_DATA));
+  localStorage.removeItem(STORE_KEY);
+  updateCharts(); closeModal('settings');
+}
+
+// close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el) el.classList.remove('active');});
+});
+
+// INIT
+loadData();
+document.addEventListener('DOMContentLoaded',()=>{
+  initCharts();
+  updateCharts();
+});
+// fallback if DOMContentLoaded already fired
+if(document.readyState==='complete'||document.readyState==='interactive'){
+  setTimeout(()=>{if(!charts.monthly){initCharts();updateCharts();}},100);
+}
+</script>
+</body>
+</html>
